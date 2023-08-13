@@ -16,7 +16,8 @@ use std::str::FromStr;
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ServerInfo {
   pub name: String,
-  pub version: String,
+  pub game_version: String,
+  pub network_version: String,
   pub players: u8,
   pub max_players: u8,
   pub map: String,
@@ -40,7 +41,8 @@ impl ServerInfo {
     let unknown = String::from("Unknown");
     ServerInfo {
       name: fetch_var("NAME", &unknown),
-      version: unknown.clone(),
+      game_version: unknown.clone(),
+      network_version: unknown.clone(),
       players: 0,
       max_players: 0,
       map: fetch_var("NAME", &unknown),
@@ -60,9 +62,31 @@ impl From<SocketAddrV4> for ServerInfo {
 impl From<Info> for ServerInfo {
   fn from(info: Info) -> ServerInfo {
     let version = String::from(&info.clone().extended_server_info.keywords.unwrap());
+    let unknown = String::from("Unknown");
+    let game_version: Option<String> = version
+      .split(',')
+      .filter_map(|x| match x.contains("gameversion") {
+        true => x
+          .split('=')
+          .last()
+          .map(|y| String::from(y.trim_matches('"'))),
+        false => None,
+      })
+      .next();
+    let network_version: Option<String> = version
+      .split(',')
+      .filter_map(|x| match x.contains("networkversion") {
+        true => x
+          .split('=')
+          .last()
+          .map(|y| String::from(y.trim_matches('"'))),
+        false => None,
+      })
+      .next();
     ServerInfo {
       name: info.name,
-      version,
+      game_version: game_version.unwrap_or(unknown.clone()),
+      network_version: network_version.unwrap_or(unknown.clone()),
       players: info.players,
       max_players: info.max_players,
       map: info.map,
@@ -81,6 +105,8 @@ impl Display for ServerInfo {
     let bepinex = &self.bepinex;
     let mut server_info = vec![
       format!("Name: {}", &self.name),
+      format!("Game Version: {}", &self.game_version),
+      format!("Network Version: {}", &self.network_version),
       format!("Players: {}/{}", &self.players, &self.max_players),
       format!("Map: {}", &self.map),
       format!("BepInEx Enabled: {}", bepinex.enabled),

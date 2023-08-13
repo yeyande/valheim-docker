@@ -3,9 +3,10 @@ use crate::fetch_info;
 pub fn invoke() -> String {
   let info = fetch_info();
   let labels = format!(
-    "{{name=\"{name}\", version=\"{version}\", map=\"{map}\"}}",
+    "{{name=\"{name}\", game_version=\"{game_version}\", network_version=\"{network_version}\", map=\"{map}\"}}",
     name = &info.name,
-    version = &info.version,
+    game_version = &info.game_version,
+    network_version = &info.network_version,
     map = &info.map
   );
   let content = vec![
